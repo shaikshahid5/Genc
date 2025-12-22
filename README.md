@@ -73,4 +73,4 @@ Components Styling - 0.0 / 8.0(Failed)
 	Requirement is to check whether DisplayProducts component applied the correct styles for the label, dt, paragraph, and button tags : ( 0/2.5 )
 	Requirement is to check whether ViewCart component applied the correct styles for the h2 tag         : ( 0/1.5 )
 	Requirement is to check whether ViewCart component applied the correct styles for the dt and dl tags : ( 0/2 )
- Assessment Partially Completed. Please Try Again.
+ Assessment Partially Completed. Please Try Again
