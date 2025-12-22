@@ -1,316 +1,76 @@
-Description
+Result description
+Fail 1 - App component should show DisplayProducts component when Display Products Link is clicked::
+Error: Failed: "DisplayProducts component failed to render or link 'Display Products' doesn't appear correctly"
 
 
-Super Nova Fashion Clothings
+Fail 2 - App component should show ViewCart component when View Cart Link is clicked::
+Error: Failed: "ViewCart component failed to render or link 'View Cart' doesn't appear correctly"
 
-Objective :
 
-To work with "Routing" along with components in React JS.
+Fail 3 - App component should apply correct styles to link and div tags::
+Error: Failed: "App component didn't render properly"
 
-Scenario :
 
+Fail 4 - ViewCart component should display message when no product is added to the cart::
+Error: Failed: "ViewCart's message is not correct when there is no product in the cart"
 
-One of the most prestigious apparel stores, SuperNova fashion clothings, has chosen to build its purchasing page on React JS. Create a navigation bar for this application that allows users to switch between View Cart and Display Products.
 
-1. App Component
+Fail 5 - ViewCart component should apply h2 styles::
+Error: Failed: "Styles NOT applied properly to <h2> tag in ViewCart component"
 
-File: App.js
 
-Refer the screenshot 1 and design the App component with a list of two links: Display Products and View Cart.
+Fail 6 - DisplayProducts component should display all the products as description list::
+Error: Failed: "Displayed products' data is NOT correct."
 
-Structure:
 
-Nova_diagram
+Fail 7 - DisplayProducts component should add the selected product(s) to the cartList within Service using addToCart function::
+Error: Failed: "Function 'addToCart' didn't add the product(s) to the cartList within Service.js"
 
-Styling:
 
+Fail 8 - DisplayProducts component should apply correct styles to label, dt, p, and button tags::
+Error: Failed: "Styles are not properly applied to the 'dt' tag of DisplayProducts component"
 
-1. The <div> tag should have the below styles:
 
-(i) Minimum height must be 950px and it's background image must have linear-gradient(to bottom, #0052b0, #520f41) as its value.
+Fail 9 - ViewCart component should view the selected product(s) using description list(dl) tag::
+Error: Failed: "View Cart data is NOT displayed correctly as per the description."
 
-2.  Link tag(style: link2) for View Cart must should have the below style:
 
-(i) Size of the font must be 1.3em
+Fail 10 - ViewCart component should retrieve the cartList from Service.js using viewCart function::
+Error: Failed: "Function viewCart didn't retrieve the cartList properly"
 
-3. Link tag(style: link1) for Display Products must should have the below styles:
 
-(i) Size of the font must be 1.3em
+Fail 11 - ViewCart component should use key keyword to view the selected product(s)::
+Error: Failed: "'key'  is NOT implemented"
 
-(ii) Left side Margin must be 1.25%
 
-Routing configuration
+Fail 12 - ViewCart component should apply correct styles for dt and dl tags::
+Error: Failed: "Styles are not properly applied to the 'dt' tag of ViewCart component"
 
-Link
 
-Router path
-
-Route To
-
-Display Products
-
-/displayProducts
-
-DisplayProducts Component
-
-View Cart
-
-/viewCart
-
-ViewCart Component
-
-
-On clicking the Display Products link, it should route to the DisplayProducts Component
-
-On clicking the View Cart link, it should route to ViewCart Component.
-
-Screenshot 1
-
-
-
-
-
-2. DisplayProducts Component
-
-Design the DisplayProducts component with the below requirement.
-
-File: DisplayProducts.js
-
-Design constraints:
-
-All the available products must appear on the web page, as shown in screenshot 2
-
-Perform the iterations for the products.
-
-[List of products are fetched from products.json file and it is imported which you can make use of it directly]
-
-Implementation:
-
-Created component named "DisplayProducts".
-
-a) Iterate the productList using map within div tag
-
-b) Within map, function with product and index as it's arguments should return another div tag as follows:
-
-Tag Name
-
-Key attribute's Value
-
-Style attribute's value
-
-div
-
-Product's id
-
-styles.dt
-
-
-c) Structure to be followed inside div tag is placed below
-
-
-
-
-
-Tag Name
-
-Label Name
-
-Value
-
-Style attribute's value
-
-dl
-
-
-
-
-
-fontWeight:"500"
-
-dt
-
-Product id:
-
-{product.id}
-
-styles.dt
-
-dd
-
-Title:
-
-{product.title}
-
-styles.label
-
-dd
-
-Price:
-
-{product.price}
-
-styles.label
-
-dd
-
-Available Size:
-
-{product.availableSizes}
-
-styles.label
-
-dd>button
-
-Add To Cart
-
--
-
-styles.button
-
-
-d) Available size must use map and should return 'td' tag within which size of the product must be displayed.
-
-e) Tag 'button' must include onclick event whose value should be {this.cartHandler.bind(this,index)}
-
-f) cartHandler method must invoke addToCart function which is present inside Service.js
-
-
-Styling:
-
-Consider "styles" as constant which holds the following styles:
-
-1. The label tag should have the below styles:
-
-(i) Weight of the font must be 600
-
-(ii) Text color must be #D0F0C0
-
-2. The dt tag that iterates the cart list must use the following styles:
-
-(i) Color must be #000000
-
-(ii) Weight of the font must be 700
-
-(iii) Background color must be #D1C1F8
-
-3. The paragraph tag should have the below styles:
-
-(i) Weight of the font must be 700
-
-(ii) Color must be #FFA07A
-
-4. The button tag should have the below styles:
-
-(i) Left side of the margin must be 77.50%
-
-
-Screenshot 2
-
-
-
-
-3. ViewCart Component
-
-Design the ViewCart component with the below requirement.
-
-File: ViewCart .js
-
-
-Design constraints:
-
-Products which are added to cart must be displayed on the web page, as shown in Screenshot 4.
-
-
-Styling:
-
-Consider "styles" as constant which holds the following styles:
-
-1. The h2 tag should have the below styles:
-
-(i) Weight of the font must be 650 and it's text should be aligned center.
-
-(ii) Text color must be #FFA07A.
-
-2. The <dt> tag should have the below styles:
-
-(i) Weight of the font must be 700.
-
-(ii) Color must be #ffffff.
-
-3. The <dl> tag should have the below styles:
-
-(i) Weight of the font must be 500.
-
-Implementation:
-
-a) Method viewCart must be invoked and it's returned value must be stored in the variable 'products'.
-
-b) ViewCart component must return the div tag.
-
-c) If there is no product added to the cart, then "There are no items in the Cart list that can be shown." must be displayed as <h2> tag. [Refer screenshot 3]
-
-d) If not, then iterate the products using map and return the div which in turn consists of dl, dt, and dd tags.[Refer screnshot 4]
-
-Tag Name
-
-Label Name
-
-Value
-
-Style attribute's value
-
-dl
-
-
-
-
-
-styles.dl
-
-dt
-
-Product id:
-
-{product.id}
-
-styles.dt
-
-dd
-
-Title:
-
-{product.title}
-
-
-
-dd
-
-Price:
-
-{product.price}
-
-
-
-<dl> tag must have key attribute whose value must be the id of the product.
-
-
-
-
-Screenshot 3
-
-
-
-Screenshot 4:
-
-
-
-4. Service
-
-File: Service.js
-
-Implementation: This Service.js file has two functions namely, addToCart and viewCart [Provided as template]
-
-(i) addToCart(index): When the "Add To Cart" button is clicked, this function must push the product into the cartList(already given) and display the alert message "Product has been added to your cart."
-
-(ii) viewCart(): This function must return the cartList(declared and provided as a part of template)
-
+ Grading and Feedback
+App component - 0.0 / 13.0(Failed)
+	Requirement is to check whether DisplayProducts component is displayed when Display Products Link is clicked : ( 0/6.5 )
+	Requirement is to check whether ViewCart component is displayed when View Cart Link is clicked       : ( 0/6.5 )
+DisplayProducts component - 15.0 / 37.0(Partial Success)
+	Requirement is to check whether DisplayProducts component displays all of the products as a description list : ( 0/11 )
+	Requirement is to check whether DisplayProducts component implements map keyword                     : ( 5/5 )
+	Requirement is to check whether DisplayProducts component adds the selected product(s) to cartList using addToCart function : ( 0/11 )
+	Requirement is to check whether DisplayProducts component uses dt tag to display all the products    : ( 2.5/2.5 )
+	Requirement is to check whether DisplayProducts component uses dd tag to display all the products    : ( 2.5/2.5 )
+	Requirement is to check whether DisplayProducts component uses dl tag to display all the products    : ( 2.5/2.5 )
+	Requirement is to check whether DisplayProducts component implements key keyword                     : ( 2.5/2.5 )
+ViewCart component - 13.5 / 42.0(Partial Success)
+	Requirement is to check whether ViewCart component displays the message correctly when there is no product in the cart : ( 0/8 )
+	Requirement is to check whether ViewCart component displays the selected product(s) correctly using dl tag : ( 0/8.75 )
+	Requirement is to check whether ViewCart component implements map keyword                            : ( 5/5 )
+	Requirement is to check whether ViewCart component retrieves the cartList using viewCart function    : ( 0/8.75 )
+	Requirement is to check whether ViewCart component uses dt tag to display selected product(s)        : ( 2.5/2.5 )
+	Requirement is to check whether ViewCart component uses dd tag to display selected product(s)        : ( 3/3 )
+	Requirement is to check whether ViewCart component uses dl tag to display selected product(s)        : ( 3/3 )
+	Requirement is to check whether ViewCart component implements key keyword                            : ( 0/3 )
+Components Styling - 0.0 / 8.0(Failed)
+	Requirement is to check whether App component applied the correct styles for the link and div tags   : ( 0/2 )
+	Requirement is to check whether DisplayProducts component applied the correct styles for the label, dt, paragraph, and button tags : ( 0/2.5 )
+	Requirement is to check whether ViewCart component applied the correct styles for the h2 tag         : ( 0/1.5 )
+	Requirement is to check whether ViewCart component applied the correct styles for the dt and dl tags : ( 0/2 )
+ Assessment Partially Completed. Please Try Again.
