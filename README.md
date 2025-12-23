@@ -1,76 +1,118 @@
-Result description
-Fail 1 - App component should show DisplayProducts component when Display Products Link is clicked::
-Error: Failed: "DisplayProducts component failed to render or link 'Display Products' doesn't appear correctly"
+Description
+
+Objective:
+
+To work with a Spring Core application using annotations and bean configuration concepts.
+
+Concept Explanation:
+
+Annotations provide a concise way to configure Spring beans and dependencies, reducing XML configuration overhead. 
+
+Bean configuration involves defining and configuring application components (beans) and their dependencies through XML-based configuration or annotation. 
+
+Constructor injection: Dependencies are provided to a class through its constructor. 
+
+Concept Implementation: 
+Annotations mark the Staff and Department classes as Spring beans, allowing them to be managed by the Spring IoC container.  
+
+Bean configurations are defined within the ApplicationConfig class using annotations like @Bean.  
+
+Constructor injection is implemented by creating parameterized constructors in the Staff and Department classes, allowing dependencies to be injected during object instantiation in the Spring configuration class (ApplicationConfig). 
 
 
-Fail 2 - App component should show ViewCart component when View Cart Link is clicked::
-Error: Failed: "ViewCart component failed to render or link 'View Cart' doesn't appear correctly"
+
+Display Staff Details - Constructor Injection
+
+Staff class with the below private attributes is provided as a part of code skeleton
+
+staffId
+
+int
+
+staffName
+
+String
+
+departmentName 
+
+String
+
+contactNo
+
+long
+
+ 
+
+Getter and setter methods for all the above attributes are provided as a part of code skeleton. Write a four argument constructor which accepts staffId, staffName, departmentName and contactNo as the parameters. Annotate the Staff  class to be recognized as a Spring bean.
+
+Department class with the below private attributes is provided as a part of code skeleton
+
+departmentId
+
+int
+
+staffs
+
+List<Staff>
 
 
-Fail 3 - App component should apply correct styles to link and div tags::
-Error: Failed: "App component didn't render properly"
+Getter and setter methods for all the above attributes are provided as a part of code skeleton. Write a two argument constructor which accepts departmentId and list of staffs as the parameters. Annotate the Staff  class to be recognized as a Spring bean.
+
+Staff has to set to the Department via department and staff methods  in the ApplicationConfig class. 
+
+A method public void displayStaffDetails() will be provided in the Department class as a part of code skeleton. This method is used to display the Staff details as shown in the sample output.
+
+ ApplicationConfig  will be used as configuration class.
+
+Define beans for Staff and Department objects within this class using the  annotation.
+
+Method name 
+
+Input Parameters 
+
+Output Parameters 
+
+Logic 
+
+staff 
+
+nil 
+
+Staff 
+
+This method will create and return Staff object 
+
+department 
+
+nil 
+
+Department 
+
+This method will create and return Department object 
+
+ 
 
 
-Fail 4 - ViewCart component should display message when no product is added to the cart::
-Error: Failed: "ViewCart's message is not correct when there is no product in the cart"
+Driver class with the below methods are provided as a part of code skeleton
 
+public static Department loadStaffDetails()--> This method should fetch the Department object from ApplicatinConfig class and return the same. 
+public static void main(String[] args)-->  Inside the main method invoke the loadStaffDetails method and obtain the Department object to output the staff details.
+ Design Constraints
 
-Fail 5 - ViewCart component should apply h2 styles::
-Error: Failed: "Styles NOT applied properly to <h2> tag in ViewCart component"
+Staff class and the Department class should be present in com.spring.app package.
+Write  appropriate constructors
+The class Name/Attribute Name/PackageName should be same as specified in the problem statement. Do not create any new packages.
 
+Sample Output:
 
-Fail 6 - DisplayProducts component should display all the products as description list::
-Error: Failed: "Displayed products' data is NOT correct."
+Staff Details:
 
+Staff Id:1
 
-Fail 7 - DisplayProducts component should add the selected product(s) to the cartList within Service using addToCart function::
-Error: Failed: "Function 'addToCart' didn't add the product(s) to the cartList within Service.js"
+Staff Name:Ragul
 
+Contact Number:9445543300
 
-Fail 8 - DisplayProducts component should apply correct styles to label, dt, p, and button tags::
-Error: Failed: "Styles are not properly applied to the 'dt' tag of DisplayProducts component"
+Department Name:CSE
 
-
-Fail 9 - ViewCart component should view the selected product(s) using description list(dl) tag::
-Error: Failed: "View Cart data is NOT displayed correctly as per the description."
-
-
-Fail 10 - ViewCart component should retrieve the cartList from Service.js using viewCart function::
-Error: Failed: "Function viewCart didn't retrieve the cartList properly"
-
-
-Fail 11 - ViewCart component should use key keyword to view the selected product(s)::
-Error: Failed: "'key'  is NOT implemented"
-
-
-Fail 12 - ViewCart component should apply correct styles for dt and dl tags::
-Error: Failed: "Styles are not properly applied to the 'dt' tag of ViewCart component"
-
-
- Grading and Feedback
-App component - 0.0 / 13.0(Failed)
-	Requirement is to check whether DisplayProducts component is displayed when Display Products Link is clicked : ( 0/6.5 )
-	Requirement is to check whether ViewCart component is displayed when View Cart Link is clicked       : ( 0/6.5 )
-DisplayProducts component - 15.0 / 37.0(Partial Success)
-	Requirement is to check whether DisplayProducts component displays all of the products as a description list : ( 0/11 )
-	Requirement is to check whether DisplayProducts component implements map keyword                     : ( 5/5 )
-	Requirement is to check whether DisplayProducts component adds the selected product(s) to cartList using addToCart function : ( 0/11 )
-	Requirement is to check whether DisplayProducts component uses dt tag to display all the products    : ( 2.5/2.5 )
-	Requirement is to check whether DisplayProducts component uses dd tag to display all the products    : ( 2.5/2.5 )
-	Requirement is to check whether DisplayProducts component uses dl tag to display all the products    : ( 2.5/2.5 )
-	Requirement is to check whether DisplayProducts component implements key keyword                     : ( 2.5/2.5 )
-ViewCart component - 13.5 / 42.0(Partial Success)
-	Requirement is to check whether ViewCart component displays the message correctly when there is no product in the cart : ( 0/8 )
-	Requirement is to check whether ViewCart component displays the selected product(s) correctly using dl tag : ( 0/8.75 )
-	Requirement is to check whether ViewCart component implements map keyword                            : ( 5/5 )
-	Requirement is to check whether ViewCart component retrieves the cartList using viewCart function    : ( 0/8.75 )
-	Requirement is to check whether ViewCart component uses dt tag to display selected product(s)        : ( 2.5/2.5 )
-	Requirement is to check whether ViewCart component uses dd tag to display selected product(s)        : ( 3/3 )
-	Requirement is to check whether ViewCart component uses dl tag to display selected product(s)        : ( 3/3 )
-	Requirement is to check whether ViewCart component implements key keyword                            : ( 0/3 )
-Components Styling - 0.0 / 8.0(Failed)
-	Requirement is to check whether App component applied the correct styles for the link and div tags   : ( 0/2 )
-	Requirement is to check whether DisplayProducts component applied the correct styles for the label, dt, paragraph, and button tags : ( 0/2.5 )
-	Requirement is to check whether ViewCart component applied the correct styles for the h2 tag         : ( 0/1.5 )
-	Requirement is to check whether ViewCart component applied the correct styles for the dt and dl tags : ( 0/2 )
- Assessment Partially Completed. Please Try Again
+Department Id:123
