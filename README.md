@@ -1,399 +1,156 @@
-Perfect 👍
-Below is a FULL ASSIGNMENT-READY SPRING JDBC PROJECT with ALL FILES you asked for.
-You can directly import into Eclipse, run the SQL, and execute the main() method.
+LendPro Loan Management System
+Important Instructions:
 
-I have strictly followed:
+•	Please read the document thoroughly before you code. 	
+•	Import the given skeleton code into your Eclipse.
+•	Do not change the Skeleton code or the package structure, method names, variable names, return types, exception clauses, access specifiers etc. 	
+•	You can create any number of private methods inside the given class. 		
+•	You can test your code from main() method of the program
+•	Using Spring Core develop the application using xml configuration. Object creation and
+Initialization of variables should be done through constructor injection only. 
 
-❌ No package changes
+Assessment Coverage: 
+•	Classes, Objects and Members, Construction Injection
+•	Inheritance, Collection, Property Configuration
 
-❌ No method name changes
+Purpose of this exercise is to simulate a loan process that provides below functionality:
+Calculate the Equated Monthly Installment (EMI) based on the provided information and the configured interest rates for different loan types.
 
-❌ No signature changes
+Technical Requirements:
+You are required to do the exercise following below conditions.
+ <<Abstract>>
 
-✅ Spring Annotations
+ +Loan
 
-✅ JdbcTemplate
+- customerId :int
+
+- customerName:String
 
-✅ TransactionManager
+ <<constructor>> 
+
++ Loan(int,String)
+<<methods>> 
+
++ calculateEMI (double,int,String):double
+ 	 <<Extends>>							
+ + SmartLoan
+
+- interestRatesMap : Map<String, Double>
+<<constructor>> 
+
+ + SmartLoan(int,String, Map<String, Double>)
 
-✅ VarArgs
+<<methods>> 
 
-✅ Rollback & Commit
+ + calculateEMI (double,int,String):double
 
 
-
----
-
-📁 Project Structure
-
-ElectricityBill
-│
-├── pom.xml
-├── create-schema.sql
-│
-└── src/main
-    ├── java
-    │   └── com/cts/handson
-    │       ├── AppConfiguration.java
-    │       ├── ElectricityBillApplication.java
-    │       ├── dao
-    │       │   └── EBillDAO.java
-    │       ├── model
-    │       │   └── EBill.java
-    │       └── util
-    │           └── DateUtil.java
-    │
-    └── resources
-        └── connection.properties
-
-
----
-
-1️⃣ create-schema.sql
-
-CREATE DATABASE electricitydb;
-USE electricitydb;
-
-CREATE TABLE EBILL (
-    BILL_NUMBER BIGINT PRIMARY KEY,
-    CONSUMER_NAME VARCHAR(50),
-    PREVIOUS_READING INT,
-    CURRENT_READING INT,
-    UNITS INT,
-    BILL_DATE DATE
-);
-
-INSERT INTO EBILL VALUES
-(100, 'Ramesh', 1200, 1300, 100, '2024-01-10'),
-(101, 'Suresh', 2000, 2150, 150, '2024-01-12'),
-(102, 'Mahesh', 3000, 3200, 200, '2024-01-15');
-
-
----
-
-2️⃣ pom.xml
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.cts.handson</groupId>
-    <artifactId>ElectricityBill</artifactId>
-    <version>1.0</version>
-
-    <dependencies>
-
-        <!-- Spring Core -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>5.3.30</version>
-        </dependency>
-
-        <!-- Spring JDBC -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
-            <version>5.3.30</version>
-        </dependency>
-
-        <!-- Spring TX -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-tx</artifactId>
-            <version>5.3.30</version>
-        </dependency>
-
-        <!-- MySQL Driver -->
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.33</version>
-        </dependency>
-
-    </dependencies>
-</project>
-
-
----
-
-3️⃣ connection.properties
-
-jdbc.driverClassName=com.mysql.cj.jdbc.Driver
-jdbc.url=jdbc:mysql://localhost:3306/electricitydb
-jdbc.username=root
-jdbc.password=root
-
-(👉 Change username/password if needed)
-
-
----
-
-4️⃣ AppConfiguration.java
-
-package com.cts.handson;
-
-import javax.sql.DataSource;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
-
-@Configuration
-@ComponentScan(basePackages = "com.cts.handson")
-@PropertySource("classpath:connection.properties")
-public class AppConfiguration {
-
-    @Autowired
-    private Environment env;
-
-    @Bean
-    public DataSource dataSource() {
-        DriverManagerDataSource ds = new DriverManagerDataSource();
-        ds.setDriverClassName(env.getProperty("jdbc.driverClassName"));
-        ds.setUrl(env.getProperty("jdbc.url"));
-        ds.setUsername(env.getProperty("jdbc.username"));
-        ds.setPassword(env.getProperty("jdbc.password"));
-        return ds;
-    }
-
-    @Bean
-    public JdbcTemplate jdbcTemplate() {
-        return new JdbcTemplate(dataSource());
-    }
-
-    @Bean
-    public PlatformTransactionManager transactionManager() {
-        return new DataSourceTransactionManager(dataSource());
-    }
-}
-
-
----
-
-5️⃣ EBillDAO.java
-
-package com.cts.handson.dao;
-
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
-
-import com.cts.handson.model.EBill;
-
-@Repository
-public class EBillDAO {
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    private PlatformTransactionManager transactionManager;
-
-    public void deleteBill(long... billNumbers) throws Exception {
-
-        TransactionStatus status =
-                transactionManager.getTransaction(new DefaultTransactionDefinition());
-
-        try {
-            for (long billNo : billNumbers) {
-
-                if (billNo < 100) {
-                    throw new Exception("Invalid Bill Number");
-                }
-
-                jdbcTemplate.update(
-                        "DELETE FROM EBILL WHERE BILL_NUMBER = ?",
-                        billNo
-                );
-            }
-
-            transactionManager.commit(status);
-
-        } catch (Exception e) {
-            transactionManager.rollback(status);
-            throw e;
-        }
-    }
-
-    public List<EBill> getAllBill() {
-        return jdbcTemplate.query(
-                "SELECT * FROM EBILL",
-                new BeanPropertyRowMapper<>(EBill.class)
-        );
-    }
-}
-
-
----
-
-6️⃣ ElectricityBillApplication.java
-
-package com.cts.handson;
-
-import java.util.List;
-
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-
-import com.cts.handson.dao.EBillDAO;
-import com.cts.handson.model.EBill;
-
-public class ElectricityBillApplication {
-
-    public static void main(String[] args) {
-
-        AnnotationConfigApplicationContext context =
-                new AnnotationConfigApplicationContext(AppConfiguration.class);
-
-        EBillDAO dao = context.getBean(EBillDAO.class);
-
-        try {
-            dao.deleteBill(100, 99); // rollback
-        } catch (Exception e) {
-            System.out.println("Transaction rolled back");
-        }
-
-        List<EBill> bills = dao.getAllBill();
-        bills.forEach(System.out::println);
-
-        context.close();
-    }
-}
-
-
----
-
-7️⃣ EBill.java
-
-package com.cts.handson.model;
-
-import java.sql.Date;
-
-public class EBill {
-
-    private long billNumber;
-    private String consumerName;
-    private int previousReading;
-    private int currentReading;
-    private int units;
-    private Date billDate;
-
-    public long getBillNumber() {
-        return billNumber;
-    }
-
-    public void setBillNumber(long billNumber) {
-        this.billNumber = billNumber;
-    }
-
-    public String getConsumerName() {
-        return consumerName;
-    }
-
-    public void setConsumerName(String consumerName) {
-        this.consumerName = consumerName;
-    }
-
-    public int getPreviousReading() {
-        return previousReading;
-    }
-
-    public void setPreviousReading(int previousReading) {
-        this.previousReading = previousReading;
-    }
-
-    public int getCurrentReading() {
-        return currentReading;
-    }
-
-    public void setCurrentReading(int currentReading) {
-        this.currentReading = currentReading;
-    }
-
-    public int getUnits() {
-        return units;
-    }
-
-    public void setUnits(int units) {
-        this.units = units;
-    }
-
-    public Date getBillDate() {
-        return billDate;
-    }
-
-    public void setBillDate(Date billDate) {
-        this.billDate = billDate;
-    }
-
-    @Override
-    public String toString() {
-        return "EBill [billNumber=" + billNumber +
-               ", consumerName=" + consumerName +
-               ", units=" + units +
-               ", billDate=" + billDate + "]";
-    }
-}
-
-
----
-
-8️⃣ DateUtil.java
-
-package com.cts.handson.util;
-
-import java.sql.Date;
-import java.time.LocalDate;
-
-public class DateUtil {
-
-    public static Date getCurrentDate() {
-        return Date.valueOf(LocalDate.now());
-    }
-}
-
-
----
-
-✅ FINAL RESULT (What Examiner Expects)
-
-deleteBill(100, 99) → ❌ Rollback
-
-No record deleted
-
-getAllBill() → returns all rows
-
-Uses JdbcTemplate + BeanPropertyRowMapper + TransactionManager
-
-
-
----
-
-If you want:
-
-📄 PDF notes
-
-🧠 Viva answers
-
-✍️ Short explanation version
-
-🧪 Output screenshot explanation
-
-
-Just tell me 🔥
+An abstract class Loan with below mentioned private member variables, constructor and public methods are provided as part of the code skeleton:									
+Attribute	Datatype
+customerId			int		
+name	String		
+
+Create a class SmartLoan that extends the class Loan with below mentioned private member variables and public methods:									
+Attribute	Datatype
+interestRatesMap	Map<String,Double>
+
+Define a public parameterized constructor with all the above variables in the same order of parameters, along with getter and setter methods. 																	
+Specifier/Modifier		Method 	Name	Input Parameters	Output Parameters	Logic
+public
+	calculateEMI
+	double loanAmount, 
+int tenure,
+String loanType			double
+	This method accepts loan amount, tenure and loan type as parameters and calculates EMI and returns the same.
+
+Business Rules:
+
+Methods
+	Business Condition
+
+calculateEMI			Loan amount should be greater than 0 and tenure should be greater than 0 months and loan type should be available in the properties file. Return value should be format to 2 decimal places.
+
+Hint : Use DecimalFormat API
+
+
+Loan class should be registered as a bean as ‘abstract= true’ with the spring container via XML file.
+Create class SmartLoan which extends Loan and give implementation for abstract method calculateEMI. Use below formula to calculate emi.
+SmartLoan class should be registered as a bean with the spring container via XML file with bean id as smartLoan.
+The values for all the attributes should be injected via constructor-based injection, the default customerId should be 12345, customerName should be ‘John’, and properties should be fetched from the properties file called accounts.properties using the property configuration concept by creating a bean of PropertyPlaceholderConfigurer in spring container via XML file.
+loanTypes.properties									
+Key	Value	
+ personalLoan	0.085
+ homeLoan	0.075	
+ carLoan	0.09
+
+
+Note:  Key values are case sensitive.
+
+EMI Calculation:  
+EMI = (P * r * (1 + r)^n) / ((1 + r)^n - 1)
+P=loan amount, r=interest rate, n=number of months based on loan type
+e.g: p=10000, n=12, loan type = carLoan
+Annual Interest rate is given. To convert that to monthly, divide by 12.
+For carLoan, r = 0.09. After converting to monthly, r = 0.09 /12 = 0.0075
+EMI =  (10000 * 0.0075 * (1 + 0.0075)^12) / ((1 + 0.0075)^12 - 1)
+EMI = 874.51
+
+
+General Design Constraints:
+•	Ensure that all the Java Coding Standards are followed.
+•	Assume that the method inputs are valid always, hence exceptional blocks are not needed to be included in the development.
+
+Sample Input Output 1:
+Welcome to Loan Processing System
+Customer Name: John
+Customer ID: 12345
+Enter loan amount
+90000
+Enter loan tenure in months
+9
+Enter loan type
+homeLoan
+Your EMI for 9 months will be $10315.1
+
+Sample Input Output 2:
+Welcome to Loan Processing System
+Customer Name: John
+Customer ID: 12345
+Enter loan amount
+525000
+Enter loan tenure in months
+15
+Enter loan type
+carLoan
+Your EMI for 15 months will be $37136.61
+
+Sample Input Output 3:
+Welcome to Loan Processing System
+Customer Name: John
+Customer ID: 12345
+Enter loan amount
+450000
+Enter loan tenure in months
+21
+Enter loan type
+propertyLoan
+Invalid Input
+
+
+
+
+
+LendPro
+pom.xml
+src
+main
+java
+com
+spring
+app
+Driver.java
+Loan.java
+SmartLoan.java
+resources
+beans.xml
+loanTypes.properties
