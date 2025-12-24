@@ -35,4 +35,22 @@ EBillDAO	List<EBill> getAllBill()	•	Uses BeanPropertyRowMapper and returns EBI
 ElectricityBillApplication	main()	•	Get EBillDAO bean
 •	Using dao, delete records (eg. 100,99)
 •	Using dao, retrieve and display all EBills	
-
+files : ElectricityBill
+create-schema.sql
+pom.xml
+src
+main
+java
+com
+cts
+handson
+AppConfiguration.java
+dao
+EBillDAO.java
+ElectricityBillApplication.java
+model
+EBill.java
+util
+DateUtil.java
+resources
+connection.properties
