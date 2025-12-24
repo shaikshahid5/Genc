@@ -1,118 +1,38 @@
-Description
+Important Instructions:
+•	Please read the document thoroughly before you code.
+•	Import the given skeleton code into your Eclipse.
+•	Do not change the Skeleton code or the package structure, method names, variable names, return types, exception clauses, access specifiers etc.
+•	You can create any number of private methods inside the given class.
+•	Use Spring annotations to configure, inject beans.
+•	You are provided with a Main class with the main method to check the correctness of the DAO methods written.
+•	
+•	Having completed writing the DAO methods, execute the main method and identify the result.
+Assessment Coverage:
+•	Spring JdbcTemplate methods – update(), query() & BeanPropertyRowMapper
+•	PlatformTransactionManager methods – getTransaction(), commit(), rollback()
 
-Objective:
+I.	Business Scenario:
+Electricity consumption is recorded in terms of kWh or Units from the electricity meter installed in the premise. A person from the electricity provider records the current reading and subtracts it from previous reading to calculate the current period consumption.
+You are required to develop a Spring JDBC application to view such electricity consumption records and delete some. Detailed descriptions given below
 
-To work with a Spring Core application using annotations and bean configuration concepts.
+II.	Skeleton Details:
+	Following classes/interfaces fully implemented as part of the skeleton,
+•	com.cts.handson.AppConfiguration
+•	com.cts.handson.model.EBill
+•	com.cts.handson.util.DateUtil
+•	SQL file to create database & table
 
-Concept Explanation:
-
-Annotations provide a concise way to configure Spring beans and dependencies, reducing XML configuration overhead. 
-
-Bean configuration involves defining and configuring application components (beans) and their dependencies through XML-based configuration or annotation. 
-
-Constructor injection: Dependencies are provided to a class through its constructor. 
-
-Concept Implementation: 
-Annotations mark the Staff and Department classes as Spring beans, allowing them to be managed by the Spring IoC container.  
-
-Bean configurations are defined within the ApplicationConfig class using annotations like @Bean.  
-
-Constructor injection is implemented by creating parameterized constructors in the Staff and Department classes, allowing dependencies to be injected during object instantiation in the Spring configuration class (ApplicationConfig). 
-
-
-
-Display Staff Details - Constructor Injection
-
-Staff class with the below private attributes is provided as a part of code skeleton
-
-staffId
-
-int
-
-staffName
-
-String
-
-departmentName 
-
-String
-
-contactNo
-
-long
 
  
+ 
+III.	Functional Requirements:
+The application has the below classes and methods to be implemented by you.
+Class	Method(s)	Responsibilities	Exception
+EBillDAO	void deleteBill (long…billNumbers)	•	Accepts one or more bill numbers as varArgs.
+•	In try block, it iterates bill numbers and delete records from the EBILL table if the bill number >=100
+•	After successful transaction, the transaction manager commits entire transaction.	If any bill number is less than 100, throw new Exception() and rollback() entire transaction in catch block.
+EBillDAO	List<EBill> getAllBill()	•	Uses BeanPropertyRowMapper and returns EBILL table records as list	
+ElectricityBillApplication	main()	•	Get EBillDAO bean
+•	Using dao, delete records (eg. 100,99)
+•	Using dao, retrieve and display all EBills	
 
-Getter and setter methods for all the above attributes are provided as a part of code skeleton. Write a four argument constructor which accepts staffId, staffName, departmentName and contactNo as the parameters. Annotate the Staff  class to be recognized as a Spring bean.
-
-Department class with the below private attributes is provided as a part of code skeleton
-
-departmentId
-
-int
-
-staffs
-
-List<Staff>
-
-
-Getter and setter methods for all the above attributes are provided as a part of code skeleton. Write a two argument constructor which accepts departmentId and list of staffs as the parameters. Annotate the Staff  class to be recognized as a Spring bean.
-
-Staff has to set to the Department via department and staff methods  in the ApplicationConfig class. 
-
-A method public void displayStaffDetails() will be provided in the Department class as a part of code skeleton. This method is used to display the Staff details as shown in the sample output.
-
- ApplicationConfig  will be used as configuration class.
-
-Define beans for Staff and Department objects within this class using the  annotation.
-
-Method name 
-
-Input Parameters 
-
-Output Parameters 
-
-Logic 
-
-staff 
-
-nil 
-
-Staff 
-
-This method will create and return Staff object 
-
-department 
-
-nil 
-
-Department 
-
-This method will create and return Department object 
-
- 
-
-
-Driver class with the below methods are provided as a part of code skeleton
-
-public static Department loadStaffDetails()--> This method should fetch the Department object from ApplicatinConfig class and return the same. 
-public static void main(String[] args)-->  Inside the main method invoke the loadStaffDetails method and obtain the Department object to output the staff details.
- Design Constraints
-
-Staff class and the Department class should be present in com.spring.app package.
-Write  appropriate constructors
-The class Name/Attribute Name/PackageName should be same as specified in the problem statement. Do not create any new packages.
-
-Sample Output:
-
-Staff Details:
-
-Staff Id:1
-
-Staff Name:Ragul
-
-Contact Number:9445543300
-
-Department Name:CSE
-
-Department Id:123
