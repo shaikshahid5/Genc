@@ -1,155 +1,148 @@
 # 🏥 Medicine Inventory & Order Management System  
-### Enterprise-Grade REST API Documentation
+### Enterprise-Grade REST API – Complete Technical Documentation
 
-This document is a **complete knowledge base** of the system.  
-After reading this you will understand:
+This README is a **full knowledge document** of the project — not just endpoint listing.  
+After reading this, any developer can:
 
-✔ Business logic behind pharmacy systems  
-✔ How batches & expiry work  
-✔ How orders consume stock  
-✔ Exact database design  
-✔ API contracts  
-✔ Internal algorithms  
-✔ Failure scenarios  
+✔ Understand pharmacy domain logic  
+✔ Know how batches & expiry work  
+✔ Understand FEFO deduction  
+✔ Use all APIs correctly  
+✔ Understand DB relationships  
+✔ Debug errors  
+✔ Explain project in interview  
 
 ---
 
-# 1. BUSINESS THEORY — BEFORE CODING
+# 1. DOMAIN THEORY — WHY THIS SYSTEM EXISTS
 
-## 1.1 How Real Pharmacies Work
+## 1.1 Real Pharmacy Stock Concept
 
-Medicine stock is NOT a single number.
+Medicine stock is NOT stored as:
 
-❌ Wrong model  
-Paracetamol → 100 units
+❌ Paracetamol = 100 units
 
-✔ Real model  
-Paracetamol arrives in BATCHES:
+Because medicines expire.
+
+✔ Correct model:
 
 | Batch | Expiry | Qty |
 |------|--------|-----|
 | B1 | 2025-06 | 30 |
 | B2 | 2026-01 | 70 |
 
-### When customer buys 40:
+### If customer buys 40:
 
-System MUST:
+System must:
 
 1. Use earliest expiry first  
-2. Deduct 30 from B1  
-3. Deduct 10 from B2  
+2. Take 30 from B1  
+3. Take 10 from B2  
 
-👉 This is called **FEFO – First Expiry First Out**
+👉 **FEFO – First Expiry First Out**
 
 ---
 
-## 1.2 Core Business Requirements
+## 1.2 Core Business Rules
 
 ### Stock Rules
-
-1. Expired batches → CANNOT be sold  
-2. Total stock = SUM of all batch quantities  
-3. Medicine status is DERIVED:
+1. Expired batches → cannot be sold  
+2. Medicine stock = SUM of batch.qtyAvailable  
+3. Medicine fields are DERIVED:
 
 ```
-if total = 0      → Out of stock
-if total 1–49     → Low stock
-if total ≥ 50     → Available
+totalQuantity = sum(all batches)
+
+inStock = totalQuantity > 0
+
+stockStatus =
+  0        → "Out of stock"
+  1–49     → "Low stock"
+  ≥50      → "Available"
 ```
 
 ### Order Rules
-
-- Order must be FULLY available  
-- Partial deduction not allowed  
-- Price at purchase must be stored  
-- Stock update must be ATOMIC  
+- Order must be fully available  
+- Partial deduction NOT allowed  
+- Deduction must be atomic  
+- priceAtPurchase must be stored  
 
 ---
 
 # 2. SYSTEM ARCHITECTURE
 
 ```
-Client (React/Postman)
+Client (React / Postman)
         ↓
-Controller Layer
+Controller Layer  – REST endpoints
         ↓
-Service Layer (Business + FEFO)
+Service Layer – Business + FEFO
         ↓
-Repository Layer
+Repository Layer – JPA
         ↓
 MySQL Database
 ```
 
 ---
 
-# 3. DOMAIN MODEL — HEART OF SYSTEM
+# 3. DOMAIN MODEL (From Swagger)
 
-## 3.1 Entities in Simple English
+## 3.1 Entities Exactly As Per API
 
-### 🟢 Medicine = PRODUCT
+### 🟢 Medicine Schema
 
-- Basic info  
-- List of batches  
-- Calculated stock  
+```json
+{
+ "id": 0,
+ "name": "string",
+ "category": "string",
+ "price": 0,
+ "sku": "string",
+ "requiresRx": true,
+ "batches": [Batch],
+ "inStock": true,
+ "stockStatus": "string",
+ "totalQuantity": 0
+}
+```
 
-### 🟡 Batch = PHYSICAL STOCK UNIT
+### 🟡 Batch Schema
 
-- Expiry  
-- Quantity  
-- Linked to one medicine  
+```json
+{
+ "id": 0,
+ "batchNo": "string",
+ "expiryDate": "2026-01-19",
+ "qtyAvailable": 0,
+ "orderItems": [OrderItem]
+}
+```
 
-### 🔵 OrderItem = CONSUMPTION RECORD
+### 🔵 OrderItem Schema
 
-- How much sold  
-- At what price  
-- From which batch  
+```json
+{
+ "id": 0,
+ "quantity": 0,
+ "priceAtPurchase": 0
+}
+```
 
 ---
 
-## 3.2 Java Model (Conceptual)
+## 3.2 Relationships (Real Meaning)
 
-### Medicine
+### Medicine → Batch  (1 : N)
 
-```java
-class Medicine {
- Long id;
- String name;
- String category;
- double price;
- String sku;
- boolean requiresRx;
+One medicine can have many batches because:
 
- List<Batch> batches;
+- different suppliers  
+- different expiry dates  
+- different arrivals  
 
- // Derived
- boolean inStock;
- String stockStatus;
- int totalQuantity;
-}
-```
+### Batch → OrderItem (1 : N)
 
-### Batch
-
-```java
-class Batch {
- Long id;
- String batchNo;
- LocalDate expiryDate;
- int qtyAvailable;
-
- List<OrderItem> orderItems;
-}
-```
-
-### OrderItem
-
-```java
-class OrderItem {
- Long id;
- int quantity;
- double priceAtPurchase;
-}
-```
+One batch can serve many orders.
 
 ---
 
@@ -158,44 +151,19 @@ class OrderItem {
 ## 4.1 Tables
 
 ### medicines
-
-| id | name | sku | price | requires_rx |
+| id | name | category | price | sku | requires_rx |
 
 ### batches
-
-| id | batch_no | expiry_date | qty | medicine_id |
+| id | batch_no | expiry_date | qty_available | medicine_id |
 
 ### order_items
-
-| id | qty | price | batch_id |
-
----
-
-## 4.2 Relationships
-
-### 1 Medicine → Many Batches
-
-```
-Medicine (1)
-   |
-   |---- Batch A
-   |---- Batch B
-```
-
-### 1 Batch → Many OrderItems
-
-```
-Batch B1
-   |
-   |--- OrderItem 1
-   |--- OrderItem 2
-```
+| id | quantity | price_at_purchase | batch_id |
 
 ---
 
 # 5. DERIVED FIELD LOGIC
 
-## 5.1 Stock Calculation
+### Stock Calculation
 
 ```java
 totalQuantity =
@@ -204,31 +172,31 @@ totalQuantity =
          .sum();
 ```
 
-## 5.2 Status Logic
+### Status
 
 ```java
 if(total == 0)
-   status = "Out of stock";
+   "Out of stock"
 else if(total < 50)
-   status = "Low stock";
+   "Low stock"
 else
-   status = "Available";
+   "Available"
 ```
 
 ---
 
-# 6. FEFO ALGORITHM (MOST IMPORTANT)
+# 6. FEFO ALGORITHM — CORE LOGIC
 
-## 6.1 Flow
+### Steps
 
-1. Get all batches of medicine  
+1. Get batches of medicine  
 2. Remove expired  
 3. Sort by expiry ASC  
 4. Deduct sequentially  
 
-## 6.2 Pseudocode
+### Pseudocode
 
-```text
+```
 need = order qty
 
 for batch in batches sorted by expiry:
@@ -242,17 +210,17 @@ for batch in batches sorted by expiry:
   else:
        deduct batch.qty
        need -= batch.qty
-```
 
-If need > 0 → FAIL ORDER
+if need > 0 → fail order
+```
 
 ---
 
-# 7. API SPECIFICATION
+# 7. API DOCUMENTATION (From Swagger)
 
 ## BASE
 - http://localhost:8080  
-- /v3/api-docs
+- /v3/api-docs  
 
 ---
 
@@ -263,44 +231,71 @@ If need > 0 → FAIL ORDER
 **Response**
 
 ```json
-{
- "id":1,
- "name":"Paracetamol",
- "totalQuantity":100,
- "stockStatus":"Available",
- "batches":[]
-}
+[
+ {
+  "id": 1,
+  "name": "string",
+  "category": "string",
+  "price": 0,
+  "sku": "string",
+  "requiresRx": true,
+  "batches": [],
+  "inStock": true,
+  "stockStatus": "string",
+  "totalQuantity": 0
+ }
+]
 ```
+
+---
+
+### GET /medicines/{id}
+
+Returns single medicine with batches and orderItems.
 
 ---
 
 ### POST /medicines
 
-**Request**
+**Request Body**
 
-```json
-{
- "name":"Dolo",
- "category":"Fever",
- "price":20,
- "sku":"MED-1",
- "requiresRx":false
-}
-```
+Same as Medicine schema.
+
+Used to create new medicine.
+
+---
+
+### PUT /medicines/{id}
+
+Used to:
+
+- update details  
+- attach batches  
+- modify stock info  
+
+---
+
+### DELETE /medicines/{id}
+
+Removes medicine.
 
 ---
 
 ## 7.2 BATCH CONTROLLER
 
-### POST /batches
+### GET /batches
+Returns all batches.
 
-```json
-{
- "batchNo":"B2026",
- "expiryDate":"2026-10-01",
- "qtyAvailable":100
-}
-```
+### GET /batches/{id}
+Single batch with orderItems.
+
+### POST /batches
+Create batch.
+
+### PUT /batches/{id}
+Update batch qty / expiry.
+
+### DELETE /batches/{id}
 
 ---
 
@@ -308,109 +303,94 @@ If need > 0 → FAIL ORDER
 
 ### POST /api/orders/pay
 
+**Request (Swagger shows dynamic map)**
+
 ```json
 [
- {
-  "medicineId":1,
-  "quantity":2,
-  "priceAtPurchase":50
- }
+ { "medicineId":1, "quantity":2, "priceAtPurchase":50 }
 ]
 ```
 
-### Internal Steps
+### Internal Flow
 
 1. Validate medicine  
 2. Check non-expired batches  
-3. Run FEFO deduction  
+3. Run FEFO  
 4. Create OrderItem  
 5. Update totals  
 
 ---
 
-# 8. ERROR SCENARIOS
+# 8. ERROR HANDLING
 
-### 422 – Insufficient stock
-```
-"Only 10 units available"
-```
+### 400 – Bad Request
+- invalid date  
+- wrong JSON
 
-### 422 – All batches expired
-```
-"No valid batches"
-```
+### 409 – Conflict
+- duplicate SKU
 
-### 409 – Duplicate SKU
-
-### 400 – Bad date format
+### 422 – Business Errors
+- insufficient stock  
+- only expired batches
 
 ---
 
-# 9. TRANSACTION BEHAVIOR
+# 9. TRANSACTION MANAGEMENT
 
-Order process is:
+Order payment is:
 
 ✔ SINGLE TRANSACTION
 
 If any step fails:
 
-❌ No deduction  
-❌ No order items  
-❌ Data unchanged  
+❌ no stock deduction  
+❌ no order items  
+❌ rollback  
 
 ---
 
-# 10. DESIGN DECISIONS EXPLAINED
+# 10. DESIGN DECISIONS
 
 ### Why priceAtPurchase?
+Future price may change.
 
-Price may change tomorrow  
-Invoice must keep old price
+### Why batches?
+Legal + expiry tracking.
 
-### Why not simple stock column?
-
-Because:
-- expiry  
-- legal tracking  
-- recalls  
-
-### Why FEFO not FIFO?
-
-Medical safety requirement
+### Why FEFO?
+Medical safety.
 
 ---
 
-# 11. EDGE CASES HANDLED
+# 11. EDGE CASES
 
 - Multiple batches needed  
 - Expired + valid mix  
 - Concurrent orders  
-- Zero stock race  
-- Negative qty protection  
+- Negative qty guard  
 
 ---
 
-# 12. EXTENSIONS POSSIBLE
+# 12. INTERVIEW EXPLANATION
 
-- Prescription module  
-- GST billing  
-- Supplier tracking  
-- Returns  
-- Audit logs  
+This project proves:
 
----
-
-# 13. LEARNING OUTCOME
-
-This project demonstrates:
-
-- JPA relationships  
+- JPA 1:N mapping  
 - Derived fields  
-- Transactions  
-- Business validation  
+- Transaction  
 - Real domain modeling  
-- Not toy CRUD
+- Not CRUD toy  
 
 ---
 
-# END
+# 13. HOW TO TEST
+
+1. Create Medicine  
+2. Create Batch  
+3. Attach  
+4. Call /api/orders/pay  
+
+---
+
+# END — COMPLETE PROJECT GUIDE
