@@ -1,308 +1,416 @@
-Here’s a fully polished **README.md** version of your Medicine Inventory API guide. I’ve expanded the formatting, added structure, and enriched details so it feels like a professional developer-facing document.  
+# 🏥 Medicine Inventory & Order Management System  
+### Enterprise-Grade REST API Documentation
+
+This document is a **complete knowledge base** of the system.  
+After reading this you will understand:
+
+✔ Business logic behind pharmacy systems  
+✔ How batches & expiry work  
+✔ How orders consume stock  
+✔ Exact database design  
+✔ API contracts  
+✔ Internal algorithms  
+✔ Failure scenarios  
 
 ---
 
-```markdown
-# Medicine Inventory API v0
+# 1. BUSINESS THEORY — BEFORE CODING
 
-A complete developer-focused guide to the **Medicine Inventory API**.  
-This document explains every endpoint, schema, and relationship in depth—so by reading it, you can understand how the system behaves, how data flows, and how to use it correctly in real-world scenarios.
+## 1.1 How Real Pharmacies Work
 
----
+Medicine stock is NOT a single number.
 
-## 📌 Overview
+❌ Wrong model  
+Paracetamol → 100 units
 
-- **Base URL:** `http://localhost:8080`
-- **OpenAPI docs:** `/v3/api-docs`
-- **Version:** v0
+✔ Real model  
+Paracetamol arrives in BATCHES:
 
-### Controllers
-- **medicine-controller:** CRUD for medicines, stock aggregation, and batch linkage
-- **batch-controller:** CRUD for batches and batch-level inventory
-- **order-controller:** Payment processing for orders
+| Batch | Expiry | Qty |
+|------|--------|-----|
+| B1 | 2025-06 | 30 |
+| B2 | 2026-01 | 70 |
 
----
+### When customer buys 40:
 
-## 🧩 Domain Model & Relationships
+System MUST:
 
-The API models a pharmacy inventory system with three core entities: **Medicine**, **Batch**, and **OrderItem**.
+1. Use earliest expiry first  
+2. Deduct 30 from B1  
+3. Deduct 10 from B2  
 
-### Entities
-
-#### Medicine
-- `id` (int64): Unique identifier  
-- `name` (string): Medicine name  
-- `category` (string): Category (e.g., Analgesic, Antibiotic)  
-- `price` (double): Unit price  
-- `sku` (string): Stock keeping unit  
-- `requiresRx` (boolean): Whether prescription is required  
-- `batches` (array of Batch): Associated batches  
-- `inStock` (boolean): Availability flag  
-- `stockStatus` (string): Human-readable stock status  
-- `totalQuantity` (int32): Sum of quantities across all batches  
-
-#### Batch
-- `id` (int64): Unique identifier  
-- `batchNo` (string): Batch number  
-- `expiryDate` (date `YYYY-MM-DD`): Expiry date  
-- `qtyAvailable` (int32): Quantity available in this batch  
-- `orderItems` (array of OrderItem): Fulfilled order items  
-
-#### OrderItem
-- `id` (int64): Unique identifier  
-- `quantity` (int32): Quantity purchased  
-- `priceAtPurchase` (double): Price at time of purchase  
+👉 This is called **FEFO – First Expiry First Out**
 
 ---
 
-### Relationships
+## 1.2 Core Business Requirements
 
-- **Medicine → Batch (1:N):**  
-  One medicine can have many batches. Stock is distributed across batches.  
+### Stock Rules
 
-- **Batch → OrderItem (1:N):**  
-  One batch can fulfill many order items.  
-
-- **Derived fields on Medicine:**  
-  - `totalQuantity = sum(qtyAvailable)`  
-  - `inStock = totalQuantity > 0`  
-  - `stockStatus = "Available" | "Low stock" | "Out of stock"`  
-
----
-
-### Conceptual Diagram
+1. Expired batches → CANNOT be sold  
+2. Total stock = SUM of all batch quantities  
+3. Medicine status is DERIVED:
 
 ```
-Medicine (id, name, category, price, sku, requiresRx, inStock, stockStatus, totalQuantity)
-  └── batches: [Batch]
+if total = 0      → Out of stock
+if total 1–49     → Low stock
+if total ≥ 50     → Available
+```
 
-Batch (id, batchNo, expiryDate, qtyAvailable)
-  └── orderItems: [OrderItem]
+### Order Rules
 
-OrderItem (id, quantity, priceAtPurchase)
+- Order must be FULLY available  
+- Partial deduction not allowed  
+- Price at purchase must be stored  
+- Stock update must be ATOMIC  
+
+---
+
+# 2. SYSTEM ARCHITECTURE
+
+```
+Client (React/Postman)
+        ↓
+Controller Layer
+        ↓
+Service Layer (Business + FEFO)
+        ↓
+Repository Layer
+        ↓
+MySQL Database
 ```
 
 ---
 
-## 🚀 API Endpoints
+# 3. DOMAIN MODEL — HEART OF SYSTEM
 
-### Medicine Controller
+## 3.1 Entities in Simple English
 
-#### `GET /medicines`
-Retrieve all medicines with batches and stock summary.  
-**Response:** Array of Medicine objects.
+### 🟢 Medicine = PRODUCT
 
-#### `GET /medicines/{id}`
-Retrieve a single medicine by ID.  
-**Response:** Medicine object with nested batches.
+- Basic info  
+- List of batches  
+- Calculated stock  
 
-#### `POST /medicines`
-Create a new medicine.  
-**Request body:** Medicine object (batches optional).  
-**Response:** Created Medicine object.
+### 🟡 Batch = PHYSICAL STOCK UNIT
 
-#### `PUT /medicines/{id}`
-Update an existing medicine by ID.  
-**Request body:** Full Medicine object.  
-**Response:** Updated Medicine object.
+- Expiry  
+- Quantity  
+- Linked to one medicine  
 
-#### `DELETE /medicines/{id}`
-Delete a medicine by ID.  
-**Response:** `200 OK`  
+### 🔵 OrderItem = CONSUMPTION RECORD
+
+- How much sold  
+- At what price  
+- From which batch  
 
 ---
 
-### Batch Controller
-
-#### `GET /batches`
-Retrieve all batches.  
-**Response:** Array of Batch objects.
-
-#### `GET /batches/{id}`
-Retrieve a single batch by ID.  
-**Response:** Batch object.
-
-#### `POST /batches`
-Create a new batch.  
-**Request body:** Batch object.  
-**Response:** Created Batch object.
-
-#### `PUT /batches/{id}`
-Update an existing batch by ID.  
-**Response:** Updated Batch object.
-
-#### `DELETE /batches/{id}`
-Delete a batch by ID.  
-**Response:** `200 OK`  
-
----
-
-### Order Controller
-
-#### `POST /api/orders/pay`
-Process payment for an order.  
-**Request body:** Array of order items.  
-**Response:** `200 OK`  
-
-**Server responsibilities:**
-- Validate stock availability  
-- Deduct quantities from batches (FEFO: first-expiry-first-out)  
-- Create `OrderItem` entries under batches  
-- Recalculate `Medicine.totalQuantity`, `inStock`, and `stockStatus`  
-
----
-
-## 📊 Stock & Status Behavior
-
-- **Aggregation:**  
-  - `totalQuantity = sum(qtyAvailable)`  
-  - `inStock = totalQuantity > 0`  
-  - `stockStatus` thresholds:  
-    - `>= 50`: Available  
-    - `1–49`: Low stock  
-    - `0`: Out of stock  
-
-- **Expiry Handling:**  
-  - Do not fulfill orders from expired batches  
-  - Deduct from earliest expiry first (FEFO)  
-
-- **Atomicity:**  
-  - All-or-nothing order processing  
-
----
-
-## ⚠️ Validation & Error Handling
-
-- **400 Bad Request:** Invalid payload, malformed date  
-- **404 Not Found:** Medicine or batch not found  
-- **409 Conflict:** Duplicate SKU or conflicting resource  
-- **422 Unprocessable Entity:** Insufficient stock, expired batch used  
-- **500 Internal Server Error:** Unexpected server failure  
-
----
-
-## 🛠️ Practical Workflow Example
-
-### Add a medicine, add a batch, then place an order
-
-1. **Create medicine**
-```bash
-curl -X POST "http://localhost:8080/medicines" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Paracetamol",
-    "category": "Analgesic",
-    "price": 50.0,
-    "sku": "MED-001",
-    "requiresRx": false,
-    "batches": [],
-    "inStock": false,
-    "stockStatus": "Not available",
-    "totalQuantity": 0
-  }'
-```
-
-2. **Create batch**
-```bash
-curl -X POST "http://localhost:8080/batches" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "batchNo": "BATCH-2026",
-    "expiryDate": "2026-01-19",
-    "qtyAvailable": 100,
-    "orderItems": []
-  }'
-```
-
-3. **Associate batch with medicine**
-```bash
-curl -X PUT "http://localhost:8080/medicines/1" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "id": 1,
-    "name": "Paracetamol",
-    "category": "Analgesic",
-    "price": 50.0,
-    "sku": "MED-001",
-    "requiresRx": false,
-    "batches": [
-      {
-        "id": 10,
-        "batchNo": "BATCH-2026",
-        "expiryDate": "2026-01-19",
-        "qtyAvailable": 100,
-        "orderItems": []
-      }
-    ],
-    "inStock": true,
-    "stockStatus": "Available",
-    "totalQuantity": 100
-  }'
-```
-
-4. **Place order**
-```bash
-curl -X POST "http://localhost:8080/api/orders/pay" \
-  -H "Content-Type: application/json" \
-  -d '[{
-    "medicineId": 1,
-    "quantity": 2,
-    "priceAtPurchase": 50.0
-  }]'
-```
-
----
-
-## 📖 Schema Reference
+## 3.2 Java Model (Conceptual)
 
 ### Medicine
-- `id`: int64  
-- `name`: string  
-- `category`: string  
-- `price`: double  
-- `sku`: string  
-- `requiresRx`: boolean  
-- `batches`: array of Batch  
-- `inStock`: boolean  
-- `stockStatus`: string  
-- `totalQuantity`: int32  
+
+```java
+class Medicine {
+ Long id;
+ String name;
+ String category;
+ double price;
+ String sku;
+ boolean requiresRx;
+
+ List<Batch> batches;
+
+ // Derived
+ boolean inStock;
+ String stockStatus;
+ int totalQuantity;
+}
+```
 
 ### Batch
-- `id`: int64  
-- `batchNo`: string  
-- `expiryDate`: date  
-- `qtyAvailable`: int32  
-- `orderItems`: array of OrderItem  
+
+```java
+class Batch {
+ Long id;
+ String batchNo;
+ LocalDate expiryDate;
+ int qtyAvailable;
+
+ List<OrderItem> orderItems;
+}
+```
 
 ### OrderItem
-- `id`: int64  
-- `quantity`: int32  
-- `priceAtPurchase`: double  
+
+```java
+class OrderItem {
+ Long id;
+ int quantity;
+ double priceAtPurchase;
+}
+```
 
 ---
 
-## 📝 Common Implementation Decisions
+# 4. DATABASE DESIGN
 
-- **Batch association:** Decide whether batches are created with a `medicineId` or attached via `PUT /medicines/{id}`.  
-- **Stock thresholds:** Define clear thresholds for `stockStatus`.  
-- **Order payload:** Replace placeholder schema with `{ "medicineId": 1, "quantity": 2, "priceAtPurchase": 50.0 }`.  
-- **Deletion behavior:** Decide whether deleting a medicine cascades to batches or is blocked.  
+## 4.1 Tables
 
----
+### medicines
 
-## ❌ Error Examples
+| id | name | sku | price | requires_rx |
 
-- **Insufficient stock:**  
-  `422 Unprocessable Entity` → `"Insufficient stock for medicine MED-001"`
+### batches
 
-- **Expired batch attempt:**  
-  `422 Unprocessable Entity` → `"No non-expired batches available"`
+| id | batch_no | expiry_date | qty | medicine_id |
 
-- **Invalid date:**  
-  `400 Bad Request` → `"Invalid date format for expiryDate"`
+### order_items
+
+| id | qty | price | batch_id |
 
 ---
 
-## 📜 Change Log
+## 4.2 Relationships
 
-- **v0:** Initial endpoints for medicines, batches
+### 1 Medicine → Many Batches
+
+```
+Medicine (1)
+   |
+   |---- Batch A
+   |---- Batch B
+```
+
+### 1 Batch → Many OrderItems
+
+```
+Batch B1
+   |
+   |--- OrderItem 1
+   |--- OrderItem 2
+```
+
+---
+
+# 5. DERIVED FIELD LOGIC
+
+## 5.1 Stock Calculation
+
+```java
+totalQuantity =
+  batches.stream()
+         .mapToInt(Batch::getQtyAvailable)
+         .sum();
+```
+
+## 5.2 Status Logic
+
+```java
+if(total == 0)
+   status = "Out of stock";
+else if(total < 50)
+   status = "Low stock";
+else
+   status = "Available";
+```
+
+---
+
+# 6. FEFO ALGORITHM (MOST IMPORTANT)
+
+## 6.1 Flow
+
+1. Get all batches of medicine  
+2. Remove expired  
+3. Sort by expiry ASC  
+4. Deduct sequentially  
+
+## 6.2 Pseudocode
+
+```text
+need = order qty
+
+for batch in batches sorted by expiry:
+
+  if batch.expired → skip
+
+  if batch.qty >= need:
+       deduct need
+       need = 0
+       break
+  else:
+       deduct batch.qty
+       need -= batch.qty
+```
+
+If need > 0 → FAIL ORDER
+
+---
+
+# 7. API SPECIFICATION
+
+## BASE
+- http://localhost:8080  
+- /v3/api-docs
+
+---
+
+## 7.1 MEDICINE CONTROLLER
+
+### GET /medicines
+
+**Response**
+
+```json
+{
+ "id":1,
+ "name":"Paracetamol",
+ "totalQuantity":100,
+ "stockStatus":"Available",
+ "batches":[]
+}
+```
+
+---
+
+### POST /medicines
+
+**Request**
+
+```json
+{
+ "name":"Dolo",
+ "category":"Fever",
+ "price":20,
+ "sku":"MED-1",
+ "requiresRx":false
+}
+```
+
+---
+
+## 7.2 BATCH CONTROLLER
+
+### POST /batches
+
+```json
+{
+ "batchNo":"B2026",
+ "expiryDate":"2026-10-01",
+ "qtyAvailable":100
+}
+```
+
+---
+
+## 7.3 ORDER CONTROLLER
+
+### POST /api/orders/pay
+
+```json
+[
+ {
+  "medicineId":1,
+  "quantity":2,
+  "priceAtPurchase":50
+ }
+]
+```
+
+### Internal Steps
+
+1. Validate medicine  
+2. Check non-expired batches  
+3. Run FEFO deduction  
+4. Create OrderItem  
+5. Update totals  
+
+---
+
+# 8. ERROR SCENARIOS
+
+### 422 – Insufficient stock
+```
+"Only 10 units available"
+```
+
+### 422 – All batches expired
+```
+"No valid batches"
+```
+
+### 409 – Duplicate SKU
+
+### 400 – Bad date format
+
+---
+
+# 9. TRANSACTION BEHAVIOR
+
+Order process is:
+
+✔ SINGLE TRANSACTION
+
+If any step fails:
+
+❌ No deduction  
+❌ No order items  
+❌ Data unchanged  
+
+---
+
+# 10. DESIGN DECISIONS EXPLAINED
+
+### Why priceAtPurchase?
+
+Price may change tomorrow  
+Invoice must keep old price
+
+### Why not simple stock column?
+
+Because:
+- expiry  
+- legal tracking  
+- recalls  
+
+### Why FEFO not FIFO?
+
+Medical safety requirement
+
+---
+
+# 11. EDGE CASES HANDLED
+
+- Multiple batches needed  
+- Expired + valid mix  
+- Concurrent orders  
+- Zero stock race  
+- Negative qty protection  
+
+---
+
+# 12. EXTENSIONS POSSIBLE
+
+- Prescription module  
+- GST billing  
+- Supplier tracking  
+- Returns  
+- Audit logs  
+
+---
+
+# 13. LEARNING OUTCOME
+
+This project demonstrates:
+
+- JPA relationships  
+- Derived fields  
+- Transactions  
+- Business validation  
+- Real domain modeling  
+- Not toy CRUD
+
+---
+
+# END
