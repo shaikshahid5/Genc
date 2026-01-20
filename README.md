@@ -1,414 +1,252 @@
-# 🏥 Medicine Inventory & Order Management System  
-### Enterprise-Grade REST API Documentation
 
-This document is a **complete knowledge base** of the system.  
-After reading this you will understand:
-
-✔ Business logic behind pharmacy systems  
-✔ How batches & expiry work  
-✔ How orders consume stock  
-✔ Exact database design  
-✔ API contracts  
-✔ Internal algorithms  
-✔ Failure scenarios  
+# 🛢️ PetroManage — Asset Registration & Lifecycle Management Module  
+### Oil & Gas Asset & Operations Management System
 
 ---
 
-# 1. BUSINESS THEORY — BEFORE CODING
+## 📘 1. Overview
 
-## 1.1 How Real Pharmacies Work
+The **Asset Registration & Lifecycle Management Module** is the core foundation of the **PetroManage** platform.  
+It enables oil & gas organizations to efficiently **register**, **track**, and **manage** operational assets such as rigs, pipelines, and storage facilities.
 
-Medicine stock is NOT a single number.
-
-❌ Wrong model  
-Paracetamol → 100 units
-
-✔ Real model  
-Paracetamol arrives in BATCHES:
-
-| Batch | Expiry | Qty |
-|------|--------|-----|
-| B1 | 2025-06 | 30 |
-| B2 | 2026-01 | 70 |
-
-### When customer buys 40:
-
-System MUST:
-
-1. Use earliest expiry first  
-2. Deduct 30 from B1  
-3. Deduct 10 from B2  
-
-👉 This is called **FEFO – First Expiry First Out**
+The module provides:
+- Standardized **asset registration**
+- Complete **lifecycle tracking**
+- Advanced **filtering & search**
+- **DTO-driven REST APIs**
+- **MySQL-backed persistence** using JPA/Hibernate
 
 ---
 
-## 1.2 Core Business Requirements
+## 📋 2. TODO
 
-### Stock Rules
-
-1. Expired batches → CANNOT be sold  
-2. Total stock = SUM of all batch quantities  
-3. Medicine status is DERIVED:
-
-```
-if total = 0      → Out of stock
-if total 1–49     → Low stock
-if total ≥ 50     → Available
-```
-
-### Order Rules
-
-- Order must be FULLY available  
-- Partial deduction not allowed  
-- Price at purchase must be stored  
-- Stock update must be ATOMIC  
+- [x] Implement CRUD operations for Asset entity  
+- [x] Connect to MySQL database  
+- [x] DTO request/response structure  
+- [ ] Add Swagger/OpenAPI documentation  
+- [ ] Add global exception handling  
+- [ ] Add unit tests (Controller/Service)  
+- [ ] Add lifecycle rule validations  
 
 ---
 
-# 2. SYSTEM ARCHITECTURE
+## ⭐ 3. Features
 
-```
-Client (React/Postman)
-        ↓
-Controller Layer
-        ↓
-Service Layer (Business + FEFO)
-        ↓
-Repository Layer
-        ↓
-MySQL Database
-```
+### 🔹 Asset Registration
+- Register assets with:
+  - **name**
+  - **type** (`RIG`, `PIPELINE`, `STORAGE`)
+  - **location**
+  - **status**
 
----
+### 🔹 Lifecycle Status Tracking
+Supported lifecycle statuses:
+- `REGISTERED`
+- `OPERATIONAL`
+- `MAINTENANCE`
+- `UNDER_INSPECTION`
+- `DECOMMISSIONED`
 
-# 3. DOMAIN MODEL — HEART OF SYSTEM
+### 🔹 Search & Filtering
+Retrieve assets by:
+- Type  
+- Status  
+- Location  
 
-## 3.1 Entities in Simple English
-
-### 🟢 Medicine = PRODUCT
-
-- Basic info  
-- List of batches  
-- Calculated stock  
-
-### 🟡 Batch = PHYSICAL STOCK UNIT
-
-- Expiry  
-- Quantity  
-- Linked to one medicine  
-
-### 🔵 OrderItem = CONSUMPTION RECORD
-
-- How much sold  
-- At what price  
-- From which batch  
+### 🔹 Additional Features
+- MySQL persistent storage  
+- CRUD + partial update  
+- Layered architecture  
 
 ---
 
-## 3.2 Java Model (Conceptual)
+## 🏗️ 4. Tech Stack
 
-### Medicine
-
-```java
-class Medicine {
- Long id;
- String name;
- String category;
- double price;
- String sku;
- boolean requiresRx;
-
- List<Batch> batches;
-
- // Derived
- boolean inStock;
- String stockStatus;
- int totalQuantity;
-}
-```
-
-### Batch
-
-```java
-class Batch {
- Long id;
- String batchNo;
- LocalDate expiryDate;
- int qtyAvailable;
-
- List<OrderItem> orderItems;
-}
-```
-
-### OrderItem
-
-```java
-class OrderItem {
- Long id;
- int quantity;
- double priceAtPurchase;
-}
-```
+| Layer | Technology |
+|-------|------------|
+| Backend | Java 17+, Spring Boot |
+| Database | MySQL |
+| ORM | Hibernate / JPA |
+| Build Tool | Maven |
+| Documentation | Swagger (optional) |
+| Testing | JUnit 5 (optional) |
 
 ---
 
-# 4. DATABASE DESIGN
+## ⚙️ 5. Prerequisites
 
-## 4.1 Tables
-
-### medicines
-
-| id | name | sku | price | requires_rx |
-
-### batches
-
-| id | batch_no | expiry_date | qty | medicine_id |
-
-### order_items
-
-| id | qty | price | batch_id |
+- Java **17+**  
+- MySQL installed (local or cloud)  
+- Maven **3.8+**  
+- IDE (IntelliJ / Eclipse / VS Code)  
 
 ---
 
-## 4.2 Relationships
+## 🚀 6. Getting Started
 
-### 1 Medicine → Many Batches
+### 6.1 Clone the Repository
+```bash
+git clone <your-repository-url>
+cd petromanage-asset-module
+```
+## 6.2 Configure MySQL
+Edit application.properties:
 
-```
-Medicine (1)
-   |
-   |---- Batch A
-   |---- Batch B
-```
+```bash
+  spring.datasource.url=jdbc:mysql://localhost:3306/petromanage
+  spring.datasource.username=root
+  spring.datasource.password=admin
 
-### 1 Batch → Many OrderItems
+  spring.jpa.hibernate.ddl-auto=update
+  spring.jpa.show-sql=true
+```
+## 6.3 Run the Application
+```bash
+    mvn spring-boot:run
+```
+Server starts at:
+  ```bash
+  http://localhost:8080
+  ```
+---
 
-```
-Batch B1
-   |
-   |--- OrderItem 1
-   |--- OrderItem 2
-```
+## 🌐 7. API Endpoints
+  ### ➤ Base URL
+  ```
+    /api/assets
+  ```
+### 🔹 7.1 Asset CRUD & Status APIs
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/assets` | Get all assets (supports filters) |
+| GET | `/api/assets/{id}` | Get asset by ID |
+| POST | `/api/assets` | Create a new asset |
+| PUT | `/api/assets/{id}` | Update full asset details |
+| PATCH | `/api/assets/{id}/status` | Update only asset status |
+| DELETE | `/api/assets/{id}` | Delete asset |
 
 ---
 
-# 5. DERIVED FIELD LOGIC
+## 📦 8. Data Model: Asset Entity
 
-## 5.1 Stock Calculation
+| Field | Type | Description |
+|--------|------|-------------|
+| assetId | Long | Primary key |
+| name | String | Asset name |
+| type | Enum | RIG, PIPELINE, STORAGE |
+| location | String | Asset location |
+| status | Enum | Lifecycle status |
+| createdAt | Timestamp | Auto-created |
+| updatedAt | Timestamp | Auto-updated |
 
-```java
-totalQuantity =
-  batches.stream()
-         .mapToInt(Batch::getQtyAvailable)
-         .sum();
-```
-
-## 5.2 Status Logic
-
-```java
-if(total == 0)
-   status = "Out of stock";
-else if(total < 50)
-   status = "Low stock";
-else
-   status = "Available";
-```
+### Notes:
+- Use `@Enumerated(EnumType.STRING)`
+- Use `@CreationTimestamp` / `@UpdateTimestamp` for auditing
+- Suggested unique constraint: `(name, location)`
 
 ---
 
-# 6. FEFO ALGORITHM (MOST IMPORTANT)
+## 📮 9. Sample API Requests
 
-## 6.1 Flow
-
-1. Get all batches of medicine  
-2. Remove expired  
-3. Sort by expiry ASC  
-4. Deduct sequentially  
-
-## 6.2 Pseudocode
-
-```text
-need = order qty
-
-for batch in batches sorted by expiry:
-
-  if batch.expired → skip
-
-  if batch.qty >= need:
-       deduct need
-       need = 0
-       break
-  else:
-       deduct batch.qty
-       need -= batch.qty
-```
-
-If need > 0 → FAIL ORDER
-
----
-
-# 7. API SPECIFICATION
-
-## BASE
-- http://localhost:8080  
-- /v3/api-docs
-
----
-
-## 7.1 MEDICINE CONTROLLER
-
-### GET /medicines
-
-**Response**
-
+### 🟦 Create Asset (POST)
 ```json
 {
- "id":1,
- "name":"Paracetamol",
- "totalQuantity":100,
- "stockStatus":"Available",
- "batches":[]
+  "name": "Rig-Alpha",
+  "type": "RIG",
+  "location": "Abu Dhabi",
+  "status": "REGISTERED"
 }
 ```
 
----
-
-### POST /medicines
-
-**Request**
-
+### UPDATE Asset (PUT)
 ```json
 {
- "name":"Dolo",
- "category":"Fever",
- "price":20,
- "sku":"MED-1",
- "requiresRx":false
+  "name": "Rig-Alpha Updated",
+  "type": "RIG",
+  "location": "Abu Dhabi - Zone A",
+  "status": "OPERATIONAL"
 }
 ```
 
 ---
 
-## 7.2 BATCH CONTROLLER
+## 🧱 10. Architecture Overview
 
-### POST /batches
+### 🔹 Controller Layer
+Handles all HTTP requests.
 
-```json
-{
- "batchNo":"B2026",
- "expiryDate":"2026-10-01",
- "qtyAvailable":100
-}
+**Class:**  
+`com.petromanage.asset.controller.AssetController`
+
+---
+
+### 🔹 Service Layer
+Contains business logic & lifecycle rules.
+
+**Classes:**  
+- `AssetService`  
+- `AssetServiceImpl`
+
+---
+
+### 🔹 Repository Layer
+Interacts with MySQL database using JPA.
+
+**Class:**  
+`AssetRepository`
+
+---
+
+### 🔹 DTO Layer
+Defines API request & response models.
+
+**Files:**  
+- `AssetRequestDTO`  
+- `AssetResponseDTO`
+
+---
+
+### 🔹 Config Layer
+Handles CORS configuration.
+
+**Class:**  
+`com.petromanage.config.CorsConfig`
+
+
+---
+
+## 📘 11. Swagger / API Documentation
+
+To enable Swagger UI, add:
+
+```xml
+<dependency>
+  <groupId>org.springdoc</groupId>
+  <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+  <version>2.5.0</version>
+</dependency>
+```
+### Swagger UI URL:
+
+```bash
+http://localhost:8080/swagger-ui
+
 ```
 
 ---
 
-## 7.3 ORDER CONTROLLER
 
-### POST /api/orders/pay
+##  📌 12. Summary
 
-```json
-[
- {
-  "medicineId":1,
-  "quantity":2,
-  "priceAtPurchase":50
- }
-]
-```
+The Asset Registration & Lifecycle Management Module is the backbone of PetroManage, enabling:
+✔ Accurate asset tracking
+✔ Reliable lifecycle management
+✔ Clean and scalable architecture
+✔ Easy integration via REST APIs
 
-### Internal Steps
+This module forms the base for future PetroManage features such as:
 
-1. Validate medicine  
-2. Check non-expired batches  
-3. Run FEFO deduction  
-4. Create OrderItem  
-5. Update totals  
-
----
-
-# 8. ERROR SCENARIOS
-
-### 422 – Insufficient stock
-```
-"Only 10 units available"
-```
-
-### 422 – All batches expired
-```
-"No valid batches"
-```
-
-### 409 – Duplicate SKU
-
-### 400 – Bad date format
-
----
-
-# 9. TRANSACTION BEHAVIOR
-
-Order process is:
-
-✔ SINGLE TRANSACTION
-
-If any step fails:
-
-❌ No deduction  
-❌ No order items  
-❌ Data unchanged  
-
----
-
-# 10. DESIGN DECISIONS EXPLAINED
-
-### Why priceAtPurchase?
-
-Price may change tomorrow  
-Invoice must keep old price
-
-### Why not simple stock column?
-
-Because:
-- expiry  
-- legal tracking  
-- recalls  
-
-### Why FEFO not FIFO?
-
-Medical safety requirement
-
----
-
-# 11. EDGE CASES HANDLED
-
-- Multiple batches needed  
-- Expired + valid mix  
-- Concurrent orders  
-- Zero stock race  
-- Negative qty protection  
-
----
-
-# 12. EXTENSIONS POSSIBLE
-
-- Prescription module  
-- GST billing  
-- Supplier tracking  
-- Returns  
-- Audit logs  
-
----
-
-# 13. LEARNING OUTCOME
-
-This project demonstrates:
-
-- JPA relationships  
-- Derived fields  
-- Transactions  
-- Business validation  
-- Real domain modeling  
-- Not toy CRUD
-
----
+Maintenance scheduling
+Compliance tracking
+Real-time analytics
